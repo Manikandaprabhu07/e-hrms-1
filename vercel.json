@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://e-hrms-2.onrender.com/api/:path*"
+      "destination": "https://prolific-illumination-production-7c5f.up.railway.app/api/:path*"
     },
     {
       "source": "/(.*)",
