@@ -1,0 +1,6 @@
+Employee ID,First Name,Last Name,Gender,DOB,Personal Email,Official Email,Mobile,Department,Designation,Basic Salary
+EMP1001,Arun,Kumar,Male,1996-04-15,arun.kumar.personal@gmail.com,arun.kumar@company.com,9876543210,Engineering,Software Engineer,45000
+EMP1002,Priya,Sharma,Female,1994-09-21,priya.sharma.personal@gmail.com,priya.sharma@company.com,9876501234,HR & Admin,HR Executive,38000
+EMP1003,Rahul,Verma,Male,1992-12-10,rahul.verma.personal@gmail.com,rahul.verma@company.com,9876512345,Finance,Accountant,42000
+EMP1004,Sneha,Reddy,Female,1998-06-05,sneha.reddy.personal@gmail.com,sneha.reddy@company.com,9876523456,Marketing,Marketing Associate,40000
+EMP1005,Vikram,Patel,Male,1991-02-28,vikram.patel.personal@gmail.com,vikram.patel@company.com,9876534567,Operations,Operations Manager,55000

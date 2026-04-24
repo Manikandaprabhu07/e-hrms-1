@@ -1,0 +1,175 @@
+<div class="account-settings-container">
+  <h1>Account Settings</h1>
+
+  <!-- Current User Info -->
+  <div class="user-info-section">
+    <h2>Current Account</h2>
+    <div class="user-details">
+      <p><strong>Name:</strong> {{ currentUser()?.firstName }} {{ currentUser()?.lastName }}</p>
+      <p><strong>Email:</strong> {{ currentUser()?.email }}</p>
+      <p><strong>Username:</strong> {{ currentUser()?.username }}</p>
+    </div>
+  </div>
+
+  <!-- Change Password Section -->
+  <div class="settings-section change-password-section">
+    <h2>Change Password</h2>
+    <p class="section-note" *ngIf="!isAdmin()">Update your own account password here.</p>
+    <p class="section-note" *ngIf="isAdmin()">Update your own admin password here.</p>
+    <form [formGroup]="changePasswordForm" (ngSubmit)="onChangePassword()">
+      <!-- Current Password -->
+      <div class="form-group">
+        <label for="currentPassword">Current Password *</label>
+        <input
+          type="password"
+          id="currentPassword"
+          formControlName="currentPassword"
+          class="form-control"
+          placeholder="Enter your current password"
+          [disabled]="isLoading()"
+        />
+        <span class="error-message" *ngIf="changePasswordForm.get('currentPassword')?.hasError('required') && changePasswordForm.get('currentPassword')?.touched">
+          Current password is required
+        </span>
+      </div>
+
+      <!-- New Password -->
+      <div class="form-group">
+        <label for="newPassword">New Password *</label>
+        <div class="password-input-wrapper">
+          <input
+            [type]="passwordVisible ? 'text' : 'password'"
+            id="newPassword"
+            formControlName="newPassword"
+            class="form-control"
+            placeholder="Enter a new password (min 8 characters)"
+            [disabled]="isLoading()"
+          />
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="togglePasswordVisibility()"
+            [disabled]="isLoading()"
+          >
+            {{ passwordVisible ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+        <span class="error-message" *ngIf="changePasswordForm.get('newPassword')?.hasError('required') && changePasswordForm.get('newPassword')?.touched">
+          New password is required
+        </span>
+        <span class="error-message" *ngIf="changePasswordForm.get('newPassword')?.hasError('minlength') && changePasswordForm.get('newPassword')?.touched">
+          Password must be at least 8 characters
+        </span>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password *</label>
+        <div class="password-input-wrapper">
+          <input
+            [type]="confirmPasswordVisible ? 'text' : 'password'"
+            id="confirmPassword"
+            formControlName="confirmPassword"
+            class="form-control"
+            placeholder="Confirm your new password"
+            [disabled]="isLoading()"
+          />
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="toggleConfirmPasswordVisibility()"
+            [disabled]="isLoading()"
+          >
+            {{ confirmPasswordVisible ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+        <span class="error-message" *ngIf="changePasswordForm.get('confirmPassword')?.hasError('required') && changePasswordForm.get('confirmPassword')?.touched">
+          Confirm password is required
+        </span>
+        <span class="error-message" *ngIf="changePasswordForm.hasError('passwordMismatch') && changePasswordForm.get('confirmPassword')?.touched">
+          Passwords do not match
+        </span>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="changePasswordForm.invalid || isLoading()"
+        >
+          {{ isLoading() ? 'Changing Password...' : 'Change Password' }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="resetPasswordForm()"
+          [disabled]="isLoading()"
+        >
+          Reset
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Change Email Section -->
+  <div class="settings-section change-email-section" *ngIf="isAdmin()">
+    <h2>Change Email Address</h2>
+    <p class="section-note">Admin only. Employee email changes are managed by the admin.</p>
+    <form [formGroup]="changeEmailForm" (ngSubmit)="onChangeEmail()">
+      <!-- New Email -->
+      <div class="form-group">
+        <label for="newEmail">New Email Address *</label>
+        <input
+          type="email"
+          id="newEmail"
+          formControlName="newEmail"
+          class="form-control"
+          placeholder="Enter your new email address"
+          [disabled]="isLoading()"
+        />
+        <span class="error-message" *ngIf="changeEmailForm.get('newEmail')?.hasError('required') && changeEmailForm.get('newEmail')?.touched">
+          New email is required
+        </span>
+        <span class="error-message" *ngIf="changeEmailForm.get('newEmail')?.hasError('email') && changeEmailForm.get('newEmail')?.touched">
+          Please enter a valid email address
+        </span>
+      </div>
+
+      <!-- Password Confirmation -->
+      <div class="form-group">
+        <label for="emailPassword">Password (for verification) *</label>
+        <input
+          type="password"
+          id="emailPassword"
+          formControlName="password"
+          class="form-control"
+          placeholder="Enter your password to confirm email change"
+          [disabled]="isLoading()"
+        />
+        <span class="error-message" *ngIf="changeEmailForm.get('password')?.hasError('required') && changeEmailForm.get('password')?.touched">
+          Password is required
+        </span>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="changeEmailForm.invalid || isLoading()"
+        >
+          {{ isLoading() ? 'Changing Email...' : 'Change Email' }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="resetEmailForm()"
+          [disabled]="isLoading()"
+        >
+          Reset
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
