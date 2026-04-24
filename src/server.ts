@@ -29,7 +29,7 @@ const angularApp = new AngularNodeAppEngine();
  * Proxy `/api/*` calls to the Nest backend when running SSR (prod build).
  * In dev, Angular's dev-server proxy (proxy.conf.json) handles this.
  */
-const backendBaseUrl = process.env['BACKEND_URL'] || 'https://e-hrms-2.onrender.com';
+const backendBaseUrl = process.env['BACKEND_URL'] || 'https://prolific-illumination-production-7c5f.up.railway.app';
 app.use('/api', async (req, res, next) => {
   try {
     const targetUrl = new URL(req.originalUrl, backendBaseUrl);
