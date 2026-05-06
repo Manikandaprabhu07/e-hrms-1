@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PayrollController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const payroll_service_1 = require("./payroll.service");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 let PayrollController = class PayrollController {
@@ -31,6 +32,12 @@ let PayrollController = class PayrollController {
     }
     create(payrollData) {
         return this.payrollService.createForEmployee(payrollData);
+    }
+    uploadPreview(file) {
+        return this.payrollService.uploadPreview(file);
+    }
+    saveImportedPayroll(rows) {
+        return this.payrollService.saveImportedPayroll(rows);
     }
     update(id, payrollData) {
         return this.payrollService.update(id, payrollData);
@@ -71,6 +78,23 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], PayrollController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)('upload-preview'),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
+    __param(0, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PayrollController.prototype, "uploadPreview", null);
+__decorate([
+    (0, common_1.Post)('save-import'),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Array]),
+    __metadata("design:returntype", void 0)
+], PayrollController.prototype, "saveImportedPayroll", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, roles_decorator_1.Roles)('ADMIN'),

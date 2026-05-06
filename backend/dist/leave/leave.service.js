@@ -18,10 +18,12 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const leave_entity_1 = require("./entities/leave.entity");
 const employee_entity_1 = require("../employees/entities/employee.entity");
+const notifications_service_1 = require("../notifications/notifications.service");
 let LeaveService = class LeaveService {
-    constructor(leaveRepository, employeesRepository) {
+    constructor(leaveRepository, employeesRepository, notificationsService) {
         this.leaveRepository = leaveRepository;
         this.employeesRepository = employeesRepository;
+        this.notificationsService = notificationsService;
     }
     findAll() {
         return this.leaveRepository.find({
@@ -52,7 +54,19 @@ let LeaveService = class LeaveService {
     }
     async update(id, leaveData) {
         await this.leaveRepository.update(id, leaveData);
-        return this.findOne(id);
+        const updated = await this.findOne(id);
+        const employee = updated.employee;
+        if (employee?.userId) {
+            await this.notificationsService.createForUser({
+                userId: employee.userId,
+                type: 'leave',
+                title: 'Leave request updated',
+                message: `Your leave request is now ${updated.status}.`,
+                link: '/leave',
+                meta: { leaveId: updated.id },
+            });
+        }
+        return updated;
     }
     async remove(id) {
         await this.leaveRepository.delete(id);
@@ -78,6 +92,7 @@ exports.LeaveService = LeaveService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(leave_entity_1.Leave)),
     __param(1, (0, typeorm_1.InjectRepository)(employee_entity_1.Employee)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        notifications_service_1.NotificationsService])
 ], LeaveService);
 //# sourceMappingURL=leave.service.js.map

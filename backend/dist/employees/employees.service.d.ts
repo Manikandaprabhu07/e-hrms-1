@@ -2,11 +2,13 @@ import { Repository } from 'typeorm';
 import { Employee } from './entities/employee.entity';
 import { UsersService } from '../users/users.service';
 import { RolesService } from '../access/roles.service';
+import { NotificationsService } from '../notifications/notifications.service';
 export declare class EmployeesService {
     private employeesRepository;
     private usersService;
     private rolesService;
-    constructor(employeesRepository: Repository<Employee>, usersService: UsersService, rolesService: RolesService);
+    private notificationsService;
+    constructor(employeesRepository: Repository<Employee>, usersService: UsersService, rolesService: RolesService, notificationsService: NotificationsService);
     findAll(): Promise<Employee[]>;
     findOne(id: string): Promise<Employee>;
     findByEmail(email: string): Promise<Employee | null>;

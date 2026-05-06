@@ -1,10 +1,12 @@
 import { Repository } from 'typeorm';
 import { Leave } from './entities/leave.entity';
 import { Employee } from '../employees/entities/employee.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 export declare class LeaveService {
     private leaveRepository;
     private employeesRepository;
-    constructor(leaveRepository: Repository<Leave>, employeesRepository: Repository<Employee>);
+    private notificationsService;
+    constructor(leaveRepository: Repository<Leave>, employeesRepository: Repository<Employee>, notificationsService: NotificationsService);
     findAll(): Promise<Leave[]>;
     findOne(id: string): Promise<Leave>;
     create(leaveData: Partial<Leave> & {

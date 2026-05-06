@@ -17,9 +17,11 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const performance_entity_1 = require("./entities/performance.entity");
+const notifications_service_1 = require("../notifications/notifications.service");
 let PerformanceService = class PerformanceService {
-    constructor(performanceRepository) {
+    constructor(performanceRepository, notificationsService) {
         this.performanceRepository = performanceRepository;
+        this.notificationsService = notificationsService;
     }
     findAll() {
         return this.performanceRepository.find({ relations: ['employee'] });
@@ -40,7 +42,19 @@ let PerformanceService = class PerformanceService {
     }
     async update(id, performanceData) {
         await this.performanceRepository.update(id, performanceData);
-        return this.findOne(id);
+        const updated = await this.findOne(id);
+        const employee = updated.employee;
+        if (employee?.userId) {
+            await this.notificationsService.createForUser({
+                userId: employee.userId,
+                type: 'system',
+                title: 'Performance review updated',
+                message: `Admin updated your performance review for ${updated.reviewPeriod}.`,
+                link: '/dashboard',
+                meta: { performanceId: updated.id },
+            });
+        }
+        return updated;
     }
     async remove(id) {
         await this.performanceRepository.delete(id);
@@ -50,6 +64,7 @@ exports.PerformanceService = PerformanceService;
 exports.PerformanceService = PerformanceService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(performance_entity_1.Performance)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        notifications_service_1.NotificationsService])
 ], PerformanceService);
 //# sourceMappingURL=performance.service.js.map

@@ -220,7 +220,25 @@ export class TrainingService {
 
     async update(id: string, trainingData: Partial<Training>): Promise<Training> {
         await this.trainingRepository.update(id, trainingData);
-        return this.findOne(id);
+        const updated = await this.findOne(id);
+        const assignments = await this.assignmentsRepository.find({
+            where: { training: { id } as any },
+            relations: ['employee'],
+        });
+        const userIds = assignments
+            .map((assignment) => (assignment.employee as any)?.userId)
+            .filter((userId): userId is string => Boolean(userId));
+
+        await this.notificationsService.createForUsers({
+            userIds,
+            type: 'training',
+            title: 'Training updated',
+            message: `Admin updated training: ${updated.title}.`,
+            link: '/training',
+            meta: { trainingId: updated.id },
+        });
+
+        return updated;
     }
 
     async remove(id: string): Promise<void> {

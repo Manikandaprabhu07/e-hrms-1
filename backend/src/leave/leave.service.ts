@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Leave } from './entities/leave.entity';
 import { Employee } from '../employees/entities/employee.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class LeaveService {
@@ -11,6 +12,7 @@ export class LeaveService {
         private leaveRepository: Repository<Leave>,
         @InjectRepository(Employee)
         private employeesRepository: Repository<Employee>,
+        private notificationsService: NotificationsService,
     ) { }
 
     findAll(): Promise<Leave[]> {
@@ -45,7 +47,21 @@ export class LeaveService {
 
     async update(id: string, leaveData: Partial<Leave>): Promise<Leave> {
         await this.leaveRepository.update(id, leaveData);
-        return this.findOne(id);
+        const updated = await this.findOne(id);
+        const employee = updated.employee as any;
+
+        if (employee?.userId) {
+            await this.notificationsService.createForUser({
+                userId: employee.userId,
+                type: 'leave',
+                title: 'Leave request updated',
+                message: `Your leave request is now ${updated.status}.`,
+                link: '/leave',
+                meta: { leaveId: updated.id },
+            });
+        }
+
+        return updated;
     }
 
     async remove(id: string): Promise<void> {

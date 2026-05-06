@@ -52,14 +52,16 @@ const typeorm_2 = require("typeorm");
 const employee_entity_1 = require("./entities/employee.entity");
 const users_service_1 = require("../users/users.service");
 const roles_service_1 = require("../access/roles.service");
+const notifications_service_1 = require("../notifications/notifications.service");
 const bcrypt = __importStar(require("bcrypt"));
 const XLSX = __importStar(require("xlsx"));
 const employee_entity_2 = require("./entities/employee.entity");
 let EmployeesService = class EmployeesService {
-    constructor(employeesRepository, usersService, rolesService) {
+    constructor(employeesRepository, usersService, rolesService, notificationsService) {
         this.employeesRepository = employeesRepository;
         this.usersService = usersService;
         this.rolesService = rolesService;
+        this.notificationsService = notificationsService;
     }
     findAll() {
         return this.employeesRepository.find();
@@ -243,7 +245,18 @@ let EmployeesService = class EmployeesService {
                 }
             }
             Object.assign(existingEmployee, employeeData);
-            return await this.employeesRepository.save(existingEmployee);
+            const saved = await this.employeesRepository.save(existingEmployee);
+            if (saved.userId) {
+                await this.notificationsService.createForUser({
+                    userId: saved.userId,
+                    type: 'system',
+                    title: 'Profile updated',
+                    message: 'Admin updated your employee profile.',
+                    link: '/account-settings',
+                    meta: { employeeId: saved.id },
+                });
+            }
+            return saved;
         }
         catch (error) {
             if (createdUserId) {
@@ -385,6 +398,7 @@ exports.EmployeesService = EmployeesService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(employee_entity_1.Employee)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         users_service_1.UsersService,
-        roles_service_1.RolesService])
+        roles_service_1.RolesService,
+        notifications_service_1.NotificationsService])
 ], EmployeesService);
 //# sourceMappingURL=employees.service.js.map

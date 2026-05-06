@@ -12,12 +12,13 @@ const typeorm_1 = require("@nestjs/typeorm");
 const performance_controller_1 = require("./performance.controller");
 const performance_service_1 = require("./performance.service");
 const performance_entity_1 = require("./entities/performance.entity");
+const notifications_module_1 = require("../notifications/notifications.module");
 let PerformanceModule = class PerformanceModule {
 };
 exports.PerformanceModule = PerformanceModule;
 exports.PerformanceModule = PerformanceModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([performance_entity_1.Performance])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([performance_entity_1.Performance]), notifications_module_1.NotificationsModule],
         controllers: [performance_controller_1.PerformanceController],
         providers: [performance_service_1.PerformanceService],
         exports: [performance_service_1.PerformanceService],

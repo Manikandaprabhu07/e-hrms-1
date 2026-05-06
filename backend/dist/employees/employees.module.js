@@ -14,12 +14,13 @@ const employees_service_1 = require("./employees.service");
 const employee_entity_1 = require("./entities/employee.entity");
 const users_module_1 = require("../users/users.module");
 const access_module_1 = require("../access/access.module");
+const notifications_module_1 = require("../notifications/notifications.module");
 let EmployeesModule = class EmployeesModule {
 };
 exports.EmployeesModule = EmployeesModule;
 exports.EmployeesModule = EmployeesModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([employee_entity_1.Employee]), users_module_1.UsersModule, access_module_1.AccessModule],
+        imports: [typeorm_1.TypeOrmModule.forFeature([employee_entity_1.Employee]), users_module_1.UsersModule, access_module_1.AccessModule, notifications_module_1.NotificationsModule],
         controllers: [employees_controller_1.EmployeesController],
         providers: [employees_service_1.EmployeesService],
         exports: [employees_service_1.EmployeesService],

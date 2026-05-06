@@ -46,12 +46,18 @@ export class AuthService {
     const user = localStorage.getItem('user');
 
     if (token && user) {
-      this.authStateSignal.update(state => ({
-        ...state,
-        accessToken: token,
-        user: JSON.parse(user),
-        isAuthenticated: true
-      }));
+      try {
+        this.authStateSignal.update(state => ({
+          ...state,
+          accessToken: token,
+          user: JSON.parse(user),
+          isAuthenticated: true
+        }));
+      } catch {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('refreshToken');
+      }
     }
   }
 

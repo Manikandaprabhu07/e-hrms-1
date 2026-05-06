@@ -1,8 +1,10 @@
 import { Repository } from 'typeorm';
 import { Performance } from './entities/performance.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 export declare class PerformanceService {
     private performanceRepository;
-    constructor(performanceRepository: Repository<Performance>);
+    private notificationsService;
+    constructor(performanceRepository: Repository<Performance>, notificationsService: NotificationsService);
     findAll(): Promise<Performance[]>;
     findOne(id: string): Promise<Performance>;
     create(performanceData: Partial<Performance>): Promise<Performance>;

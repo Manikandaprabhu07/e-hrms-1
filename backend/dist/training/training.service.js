@@ -203,7 +203,23 @@ let TrainingService = class TrainingService {
     }
     async update(id, trainingData) {
         await this.trainingRepository.update(id, trainingData);
-        return this.findOne(id);
+        const updated = await this.findOne(id);
+        const assignments = await this.assignmentsRepository.find({
+            where: { training: { id } },
+            relations: ['employee'],
+        });
+        const userIds = assignments
+            .map((assignment) => assignment.employee?.userId)
+            .filter((userId) => Boolean(userId));
+        await this.notificationsService.createForUsers({
+            userIds,
+            type: 'training',
+            title: 'Training updated',
+            message: `Admin updated training: ${updated.title}.`,
+            link: '/training',
+            meta: { trainingId: updated.id },
+        });
+        return updated;
     }
     async remove(id) {
         await this.trainingRepository.delete(id);

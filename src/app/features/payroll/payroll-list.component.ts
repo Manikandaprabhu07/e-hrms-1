@@ -18,6 +18,20 @@ interface PayrollRecord {
   paymentDate?: string;
 }
 
+interface PayrollImportPreview {
+  employeeId: string;
+  employeeName?: string;
+  month: string;
+  year: number;
+  basicSalary: number;
+  allowances: number;
+  deductions: number;
+  netSalary: number;
+  paymentStatus: string;
+  paymentDate?: string | Date | null;
+  rowNumber?: number;
+}
+
 @Component({
   selector: 'app-payroll-list',
   standalone: true,
@@ -32,6 +46,16 @@ interface PayrollRecord {
       <app-card [elevated]="true">
         @if (isAdmin()) {
           <div class="toolbar">
+            <input
+              #payrollInput
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              class="hidden-file-input"
+              (change)="onPayrollFileSelected($event)"
+            />
+            <button class="btn btn-secondary upload-btn" (click)="payrollInput.click()" [disabled]="isUploadingPreview() || isSavingImport()">
+              {{ isUploadingPreview() ? 'Uploading...' : 'Upload Payroll' }}
+            </button>
             <button class="btn btn-primary" (click)="toggleForm()">
               {{ showForm() ? 'Close' : '+ Add Payroll' }}
             </button>
@@ -83,6 +107,54 @@ interface PayrollRecord {
               <div class="form-actions">
                 <button class="btn btn-primary" (click)="savePayroll()">{{ editingId() ? 'Update' : 'Save' }}</button>
                 <button class="btn btn-secondary" (click)="resetForm()">Reset</button>
+              </div>
+            </div>
+          }
+
+          @if (importPreviewData().length > 0) {
+            <div class="import-preview">
+              <div class="preview-header">
+                <div>
+                  <h2>Payroll Import Preview</h2>
+                  <p>{{ importPreviewData().length }} payroll rows ready to save</p>
+                </div>
+                <div class="preview-actions">
+                  <button class="btn btn-secondary" (click)="clearImportPreview()" [disabled]="isSavingImport()">Clear</button>
+                  <button class="btn btn-primary" (click)="saveImportedPayroll()" [disabled]="isSavingImport()">
+                    {{ isSavingImport() ? 'Saving...' : 'Save Payroll' }}
+                  </button>
+                </div>
+              </div>
+
+              <div class="preview-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Employee ID</th>
+                      <th>Employee Name</th>
+                      <th>Month/Year</th>
+                      <th>Basic Salary</th>
+                      <th>Allowances</th>
+                      <th>Deductions</th>
+                      <th>Net Salary</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of importPreviewData(); track row.rowNumber || row.employeeId + row.month + row.year) {
+                      <tr>
+                        <td>{{ row.employeeId }}</td>
+                        <td>{{ row.employeeName || '-' }}</td>
+                        <td>{{ row.month }} {{ row.year }}</td>
+                        <td>Rs. {{ row.basicSalary | number }}</td>
+                        <td>Rs. {{ row.allowances | number }}</td>
+                        <td>Rs. {{ row.deductions | number }}</td>
+                        <td><strong>Rs. {{ row.netSalary | number }}</strong></td>
+                        <td>{{ row.paymentStatus }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
               </div>
             </div>
           }
@@ -215,7 +287,16 @@ interface PayrollRecord {
     .toolbar {
       display: flex;
       justify-content: flex-end;
+      gap: 10px;
       margin-bottom: 12px;
+    }
+
+    .hidden-file-input {
+      display: none;
+    }
+
+    .upload-btn {
+      min-width: 118px;
     }
 
     .form-grid {
@@ -249,6 +330,53 @@ interface PayrollRecord {
       display: flex;
       gap: 10px;
       align-items: center;
+    }
+
+    .import-preview {
+      margin-bottom: 14px;
+      padding: 12px;
+      border: 1px solid #dbeafe;
+      border-radius: 8px;
+      background: #f8fbff;
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .preview-header h2 {
+      margin: 0;
+      font-size: 16px;
+      color: #0f172a;
+    }
+
+    .preview-header p {
+      margin: 4px 0 0 0;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .preview-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .preview-table {
+      max-height: 260px;
+      overflow: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+    }
+
+    .preview-table table {
+      min-width: 980px;
+      table-layout: auto;
     }
 
     .row-actions {
@@ -456,6 +584,9 @@ export class PayrollListComponent implements OnInit {
   payrollRecords = signal<PayrollRecord[]>([]);
   employees = signal<any[]>([]);
   selectedSlip = signal<PayrollRecord | null>(null);
+  isUploadingPreview = signal(false);
+  isSavingImport = signal(false);
+  importPreviewData = signal<PayrollImportPreview[]>([]);
 
   isAdmin = computed(() => this.authService.hasRole('ADMIN'));
 
@@ -579,6 +710,56 @@ export class PayrollListComponent implements OnInit {
     await this.loadPayroll();
   }
 
+  async onPayrollFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    this.isUploadingPreview.set(true);
+
+    try {
+      const preview = await this.payrollService.uploadPayrollPreview(file);
+      this.importPreviewData.set(preview || []);
+
+      if (!preview?.length) {
+        alert('No valid payroll rows were found in the uploaded file.');
+      }
+    } catch (error) {
+      console.error('Error generating payroll preview:', error);
+      alert(this.getErrorMessage(error, 'Failed to generate payroll preview.'));
+    } finally {
+      this.isUploadingPreview.set(false);
+      input.value = '';
+    }
+  }
+
+  clearImportPreview(): void {
+    this.importPreviewData.set([]);
+  }
+
+  async saveImportedPayroll(): Promise<void> {
+    if (this.importPreviewData().length === 0) {
+      return;
+    }
+
+    this.isSavingImport.set(true);
+
+    try {
+      const response = await this.payrollService.saveImportedPayroll(this.importPreviewData());
+      this.importPreviewData.set([]);
+      await this.loadPayroll();
+      alert(`${response.message} Saved: ${response.saved}, Skipped: ${response.skipped}.`);
+    } catch (error) {
+      console.error('Error saving imported payroll:', error);
+      alert(this.getErrorMessage(error, 'Failed to save imported payroll.'));
+    } finally {
+      this.isSavingImport.set(false);
+    }
+  }
+
   resetForm(): void {
     this.editingId.set(null);
     this.form = {
@@ -603,5 +784,10 @@ export class PayrollListComponent implements OnInit {
 
   getStatusClass(status: string): string {
     return status.toLowerCase();
+  }
+
+  private getErrorMessage(error: any, fallback: string): string {
+    const message = error?.error?.message || error?.message || fallback;
+    return Array.isArray(message) ? message.join('\n') : String(message);
   }
 }

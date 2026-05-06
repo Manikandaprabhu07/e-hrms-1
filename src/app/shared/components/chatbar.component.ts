@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, OnInit, inject, signal, computed, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, Injector, OnDestroy, OnInit, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService, ChatbarService, EmployeeService } from '../../core/services';
@@ -11,7 +11,7 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
     <div class="chatbar" [class.open]="open()">
       <div class="chatbar-header">
         <div class="title">
-          <div class="name">Inbox</div>
+          <div class="name">Messenger</div>
           <div class="meta">
             <span class="pill">Notifications: {{ overview().unreadNotifications }}</span>
             <span class="pill">Messages: {{ overview().unreadMessages }}</span>
@@ -21,8 +21,8 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
       </div>
 
       <div class="tabs">
-        <button class="tab" [class.active]="tab() === 'notifications'" (click)="setTab('notifications')">Notifications</button>
-        <button class="tab" [class.active]="tab() === 'messages'" (click)="setTab('messages')">Messages</button>
+        <button class="tab" [class.active]="tab() === 'notifications'" (click)="setTab('notifications')">Updates</button>
+        <button class="tab" [class.active]="tab() === 'messages'" (click)="setTab('messages')">Chats</button>
       </div>
 
       @if (tab() === 'notifications') {
@@ -123,7 +123,7 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
       right: -380px;
       width: 380px;
       height: 100vh;
-      background: var(--surface-glass-strong);
+      background: #f0f2f5;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-left: 1px solid var(--border-soft);
@@ -147,15 +147,16 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
       justify-content: space-between;
       align-items: center;
       padding: 14px 14px;
+      background: #075e54;
       border-bottom: 1px solid var(--border-soft);
     }
-    .name { font-weight: 800; font-size: 16px; color: var(--text-primary); }
+    .name { font-weight: 800; font-size: 16px; color: #fff; }
     .meta { margin-top: 6px; display: flex; gap: 8px; }
     .pill {
       font-size: 11px;
       font-weight: 700;
-      color: var(--text-secondary);
-      background: var(--surface-subtle);
+      color: #d9fdd3;
+      background: rgba(255,255,255,0.12);
       padding: 3px 8px;
       border-radius: 999px;
     }
@@ -165,7 +166,7 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
       font-size: 22px;
       line-height: 1;
       cursor: pointer;
-      color: var(--text-secondary);
+      color: #fff;
     }
 
     .tabs {
@@ -179,11 +180,11 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
       border: none;
       cursor: pointer;
       font-weight: 800;
-      color: var(--text-secondary);
+      color: #475569;
     }
     .tab.active {
-      color: var(--text-primary);
-      background: rgba(37,99,235,0.08);
+      color: #075e54;
+      background: #e7f7ef;
     }
 
     .panel { padding: 12px; overflow: auto; flex: 1; }
@@ -238,8 +239,8 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
       border: 1px solid var(--border-soft);
     }
     .msg.mine .bubble {
-      background: rgba(37,99,235,0.10);
-      border-color: rgba(37,99,235,0.18);
+      background: #d9fdd3;
+      border-color: #b8efb0;
     }
     .msg-time { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
     .composer { display: flex; gap: 8px; margin-top: 10px; }
@@ -291,10 +292,11 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ChatbarComponent implements OnInit {
+export class ChatbarComponent implements OnInit, OnDestroy {
   private chatbarService = inject(ChatbarService);
   private authService = inject(AuthService);
   private employeeService = inject(EmployeeService);
+  private injector = inject(Injector);
 
   open = this.chatbarService.isOpen;
   tab = signal<'notifications' | 'messages'>('notifications');
@@ -314,6 +316,7 @@ export class ChatbarComponent implements OnInit {
 
   draft = '';
   sending = signal(false);
+  private liveTimer: ReturnType<typeof setInterval> | null = null;
 
   myUserId = computed(() => this.authService.user()?.id || '');
   isAdmin = computed(() => this.authService.hasRole('ADMIN'));
@@ -324,8 +327,22 @@ export class ChatbarComponent implements OnInit {
       void this.loadNotifications();
       void this.ensureConversationLoaded();
       void this.chatbarService.loadOverview();
-    });
+    }, { injector: this.injector });
     await this.refresh();
+    this.liveTimer = setInterval(() => {
+      if (!this.open()) return;
+      void this.refresh();
+      if (this.tab() === 'messages' && this.conversationId()) {
+        void this.loadMessages(false);
+      }
+    }, 4000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.liveTimer) {
+      clearInterval(this.liveTimer);
+      this.liveTimer = null;
+    }
   }
 
   async refresh(): Promise<void> {
@@ -453,17 +470,21 @@ export class ChatbarComponent implements OnInit {
     return 'Admin';
   }
 
-  private async loadMessages(): Promise<void> {
+  private async loadMessages(showLoading = true): Promise<void> {
     const id = this.conversationId();
     if (!id) return;
     try {
-      this.msgLoading.set(true);
+      if (showLoading) {
+        this.msgLoading.set(true);
+      }
       const msgs = await this.chatbarService.getConversationMessages(id);
       this.messages.set(msgs || []);
       await this.chatbarService.markConversationRead(id);
       await this.chatbarService.loadOverview();
     } finally {
-      this.msgLoading.set(false);
+      if (showLoading) {
+        this.msgLoading.set(false);
+      }
     }
   }
 

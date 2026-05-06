@@ -14,12 +14,13 @@ const leave_service_1 = require("./leave.service");
 const leave_entity_1 = require("./entities/leave.entity");
 const employee_entity_1 = require("../employees/entities/employee.entity");
 const employees_module_1 = require("../employees/employees.module");
+const notifications_module_1 = require("../notifications/notifications.module");
 let LeaveModule = class LeaveModule {
 };
 exports.LeaveModule = LeaveModule;
 exports.LeaveModule = LeaveModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([leave_entity_1.Leave, employee_entity_1.Employee]), employees_module_1.EmployeesModule],
+        imports: [typeorm_1.TypeOrmModule.forFeature([leave_entity_1.Leave, employee_entity_1.Employee]), employees_module_1.EmployeesModule, notifications_module_1.NotificationsModule],
         controllers: [leave_controller_1.LeaveController],
         providers: [leave_service_1.LeaveService],
         exports: [leave_service_1.LeaveService],

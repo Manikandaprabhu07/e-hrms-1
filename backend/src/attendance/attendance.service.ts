@@ -99,7 +99,21 @@ export class AttendanceService {
 
     async update(id: string, attendanceData: Partial<Attendance>): Promise<Attendance> {
         await this.attendanceRepository.update(id, attendanceData);
-        return this.findOne(id);
+        const updated = await this.findOne(id);
+        const employee = updated.employee as any;
+
+        if (employee?.userId) {
+            await this.notificationsService.createForUser({
+                userId: employee.userId,
+                type: 'attendance',
+                title: 'Attendance updated',
+                message: `Admin updated your attendance for ${updated.date}.`,
+                link: '/attendance',
+                meta: { attendanceId: updated.id, date: updated.date },
+            });
+        }
+
+        return updated;
     }
 
     async remove(id: string): Promise<void> {

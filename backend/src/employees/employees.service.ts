@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Employee } from './entities/employee.entity';
 import { UsersService } from '../users/users.service';
 import { RolesService } from '../access/roles.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import * as bcrypt from 'bcrypt';
 import * as XLSX from 'xlsx';
 import {
@@ -20,6 +21,7 @@ export class EmployeesService {
         private employeesRepository: Repository<Employee>,
         private usersService: UsersService,
         private rolesService: RolesService,
+        private notificationsService: NotificationsService,
     ) { }
 
     findAll(): Promise<Employee[]> {
@@ -240,7 +242,20 @@ export class EmployeesService {
             }
 
             Object.assign(existingEmployee, employeeData);
-            return await this.employeesRepository.save(existingEmployee);
+            const saved = await this.employeesRepository.save(existingEmployee);
+
+            if (saved.userId) {
+                await this.notificationsService.createForUser({
+                    userId: saved.userId,
+                    type: 'system',
+                    title: 'Profile updated',
+                    message: 'Admin updated your employee profile.',
+                    link: '/account-settings',
+                    meta: { employeeId: saved.id },
+                });
+            }
+
+            return saved;
         } catch (error) {
             if (createdUserId) {
                 await this.usersService.remove(createdUserId);

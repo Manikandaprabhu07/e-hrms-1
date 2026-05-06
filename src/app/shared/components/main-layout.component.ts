@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
+  OnDestroy,
+  OnInit,
   computed,
   inject,
   signal,
@@ -422,7 +424,7 @@ import { ChatbarService, EmployeeService, ThemeService } from '../../core/servic
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MainLayoutComponent {
+export class MainLayoutComponent implements OnInit, OnDestroy {
   private chatbarService = inject(ChatbarService);
   private employeeService = inject(EmployeeService);
   private router = inject(Router);
@@ -443,9 +445,12 @@ export class MainLayoutComponent {
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private employeesLoaded = false;
 
-  constructor() {
-    void this.chatbarService.loadOverview();
-    setInterval(() => void this.chatbarService.loadOverview(), 15000);
+  ngOnInit(): void {
+    this.chatbarService.startLiveUpdates();
+  }
+
+  ngOnDestroy(): void {
+    this.chatbarService.stopLiveUpdates();
   }
 
   onSidebarCollapse(collapsed: boolean): void {

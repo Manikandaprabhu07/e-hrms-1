@@ -76,6 +76,47 @@ export class PayrollService {
     });
   }
 
+  uploadPayrollPreview(file: File): Promise<any[]> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.isLoadingSignal.set(true);
+    this.errorSignal.set(null);
+
+    return new Promise((resolve, reject) => {
+      this.http.post<any[]>(`${this.apiUrl}/upload-preview`, formData).subscribe({
+        next: (rows) => {
+          this.isLoadingSignal.set(false);
+          resolve(rows || []);
+        },
+        error: (error) => {
+          this.errorSignal.set(error.error?.message || 'Failed to preview payroll data');
+          this.isLoadingSignal.set(false);
+          reject(error);
+        }
+      });
+    });
+  }
+
+  saveImportedPayroll(rows: any[]): Promise<{ message: string; saved: number; skipped: number }> {
+    this.isLoadingSignal.set(true);
+    this.errorSignal.set(null);
+
+    return new Promise((resolve, reject) => {
+      this.http.post<{ message: string; saved: number; skipped: number }>(`${this.apiUrl}/save-import`, rows).subscribe({
+        next: (response) => {
+          this.isLoadingSignal.set(false);
+          resolve(response);
+        },
+        error: (error) => {
+          this.errorSignal.set(error.error?.message || 'Failed to import payroll');
+          this.isLoadingSignal.set(false);
+          reject(error);
+        }
+      });
+    });
+  }
+
   update(id: string, patch: any): Promise<any> {
     this.isLoadingSignal.set(true);
     this.errorSignal.set(null);

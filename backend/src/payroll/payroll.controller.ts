@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Request } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Patch,
+    Delete,
+    Body,
+    Param,
+    Request,
+    UploadedFile,
+    UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { PayrollService } from './payroll.service';
 import { Payroll } from './entities/payroll.entity';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -29,6 +41,19 @@ export class PayrollController {
     @Roles('ADMIN')
     create(@Body() payrollData: any): Promise<Payroll> {
         return this.payrollService.createForEmployee(payrollData);
+    }
+
+    @Post('upload-preview')
+    @Roles('ADMIN')
+    @UseInterceptors(FileInterceptor('file'))
+    uploadPreview(@UploadedFile() file: any) {
+        return this.payrollService.uploadPreview(file);
+    }
+
+    @Post('save-import')
+    @Roles('ADMIN')
+    saveImportedPayroll(@Body() rows: any[]) {
+        return this.payrollService.saveImportedPayroll(rows);
     }
 
     @Patch(':id')
